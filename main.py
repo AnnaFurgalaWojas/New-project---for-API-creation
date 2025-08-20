@@ -1,13 +1,21 @@
-from fastapi import FastAPI
-from Function import calculator
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from Function import calculator  # import Twojej funkcji
 
 app = FastAPI()
 
-@app.get("/")
-def root():
-    return {"message": "API działa!"}
+# Model danych wejściowych (żeby API wiedziało czego się spodziewać)
+class CalcRequest(BaseModel):
+    a: float
+    b: float
+    sign: str
 
-@app.get("/add")
-def calculator(a: int, b: int, sign= str ):
-    result = calculator(a, b,sign)
-    return {"result": result}
+@app.post("/calculate")
+def calculate(data: CalcRequest):
+    try:
+        result = calculator(data.a, data.b, data.sign)
+        return {"result": result}
+    except ZeroDivisionError:
+        raise HTTPException(status_code=400, detail="Dzielenie przez zero")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
